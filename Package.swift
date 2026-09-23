@@ -1,7 +1,7 @@
+import Foundation
 // swift-tools-version:5.5
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 import PackageDescription
-import Foundation
 
 var basePath = FileManager.default.fileExists(atPath: "native") ? "native" : "."
 
@@ -11,19 +11,20 @@ let package = Package(
     .library(
       name: "gRPC-Core",
       targets: [
-        "gRPC-Core",
+        "gRPC-Core"
       ]
     ),
     .library(
       name: "gRPC-cpp",
       targets: [
-        "gRPC-cpp",
+        "gRPC-cpp"
       ]
-    )
+    ),
   ],
 
   dependencies: [
-    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
+    .package(
+      url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20250512.1"..<"0.20250512.2"),
     .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.41.0"..<"0.42.0"),
   ],
 
@@ -31,15 +32,15 @@ let package = Package(
     .target(
       name: "gRPC-Core",
       dependencies: [
-        .product(name:"abseil", package: "abseil-cpp-SwiftPM"),
-        .product(name:"openssl_grpc", package: "boringssl-SwiftPM"),
+        .product(name: "abseil", package: "abseil-cpp-SwiftPM"),
+        .product(name: "openssl_grpc", package: "boringssl-SwiftPM"),
       ],
       path: basePath,
       exclude: [
         "examples/",
         "src/objective-c/",
       ],
-    
+
       sources: [
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
@@ -445,6 +446,7 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/http2_status.h",
         "src/core/ext/transport/chttp2/transport/http2_transport.cc",
         "src/core/ext/transport/chttp2/transport/http2_transport.h",
+        "src/core/ext/transport/chttp2/transport/http2_transport_stats.h",
         "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
@@ -1876,6 +1878,8 @@ let package = Package(
         "src/core/load_balancing/oob_backend_metric_internal.h",
         "src/core/load_balancing/outlier_detection/outlier_detection.cc",
         "src/core/load_balancing/outlier_detection/outlier_detection.h",
+        "src/core/load_balancing/outlier_detection/outlier_detection_metrics.cc",
+        "src/core/load_balancing/outlier_detection/outlier_detection_metrics.h",
         "src/core/load_balancing/pick_first/pick_first.cc",
         "src/core/load_balancing/pick_first/pick_first.h",
         "src/core/load_balancing/priority/priority.cc",
@@ -2412,7 +2416,7 @@ let package = Package(
         "third_party/xxhash/xxhash.h",
       ],
       resources: [
-        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+        .copy("src/objective-c/PrivacyInfo.xcprivacy")
       ],
       publicHeadersPath: "spm-core-include",
       cSettings: [
@@ -2436,7 +2440,7 @@ let package = Package(
     .target(
       name: "gRPC-cpp",
       dependencies: [
-        .product(name:"abseil", package: "abseil-cpp-SwiftPM"),
+        .product(name: "abseil", package: "abseil-cpp-SwiftPM"),
         "gRPC-Core",
       ],
       path: basePath,
@@ -2459,10 +2463,10 @@ let package = Package(
         "src/objective-c/tests/",
       ],
       sources: [
-        "src/cpp/",
+        "src/cpp/"
       ],
       resources: [
-        .copy("src/objective-c/PrivacyInfo.xcprivacy"),
+        .copy("src/objective-c/PrivacyInfo.xcprivacy")
       ],
       publicHeadersPath: "spm-cpp-include",
       cSettings: [
@@ -2475,7 +2479,7 @@ let package = Package(
     .testTarget(
       name: "build-test",
       dependencies: [
-        "gRPC-cpp",
+        "gRPC-cpp"
       ],
       path: basePath + "/test/spm_build"
     ),

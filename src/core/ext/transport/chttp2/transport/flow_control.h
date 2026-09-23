@@ -33,6 +33,7 @@
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport_stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
@@ -690,22 +691,31 @@ class StreamFlowControl final {
     return stats;
   }
 
-  void ReportIfStalled(const bool is_client, const uint32_t stream_id,
-                       const Http2Settings& peer_settings) const {
-    if (remote_window_delta() + peer_settings.initial_window_size() <= 0 ||
-        tfc_->remote_window_ == 0) {
+  void ReportIfStalled(
+      const bool is_client, const uint32_t stream_id,
+      const Http2Settings& peer_settings,
+      http2::Http2TransportStats& http2_transport_stats) const {
+    const int64_t stream_remote_window =
+        remote_window_delta() + peer_settings.initial_window_size();
+    const int64_t transport_remote_window = tfc_->remote_window();
+    if (GPR_UNLIKELY(transport_remote_window <= 0 ||
+                     stream_remote_window <= 0)) {
+      if (transport_remote_window <= 0) {
+        http2_transport_stats.RecordTransportStalls();
+      } else {
+        http2_transport_stats.RecordStreamStalls();
+      }
       GRPC_HTTP2_FLOW_CONTROL_DLOG
           << "PH2 " << (is_client ? "CLIENT" : "SERVER")
           << " Flow Control Stalled :"
           << " Settings { peer initial window size="
           << peer_settings.initial_window_size()
-          << "}, Transport {remote_window=" << tfc_->remote_window()
+          << "}, Transport {remote_window=" << transport_remote_window
           << ", transport announced_window=" << tfc_->announced_window()
           << "}, Stream {stream_id=" << stream_id
           << ", remote_window_delta=" << remote_window_delta()
           << ", remote_window_delta() + peer_settings.initial_window_size() ="
-          << (remote_window_delta() + peer_settings.initial_window_size())
-          << " }";
+          << stream_remote_window << " }";
     }
   }
 
