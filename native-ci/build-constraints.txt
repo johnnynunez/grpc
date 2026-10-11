@@ -1,0 +1,4 @@
+# setuptools 84 routes MSVC compilation through call(), bypassing gRPC's
+# spawn() patch that separates /std:c11 and /std:c++17. Keep source unchanged.
+setuptools==80.9.0
+wheel==0.45.1

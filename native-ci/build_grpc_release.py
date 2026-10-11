@@ -30,6 +30,9 @@ assert comparison, 'sdist setup.py differs from exact tag checkout'
 manifest = {'package': package, 'version': version, 'source_commit_witness': commit, 'build_input': 'published release sdist', 'sdist_url': url, 'sdist_sha256': sha, 'setup_py_matches_tag': comparison, 'git_source_is_not_build_input': True}
 (stage/'provenance.json').write_text(json.dumps(manifest, indent=2))
 env = os.environ.copy()
+env['PIP_CONSTRAINT'] = str(Path(__file__).with_name('build-constraints.txt').resolve())
+manifest['build_constraints'] = Path(env['PIP_CONSTRAINT']).read_text()
+(stage/'provenance.json').write_text(json.dumps(manifest, indent=2))
 env['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = '4'
 env['GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME'] = '1'
 with (stage/'build.log').open('w', encoding='utf-8') as log:
