@@ -1,0 +1,127 @@
+name: Pinned gRPC CP312 native Windows ARM64
+on:
+  push:
+    branches: [ci/cp312-win-arm64-pinned]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-11-arm
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: grpcio
+            version: '1.83.0'
+            source: c876f4da50f7da2f331888b88b2a7243514139fe
+            url: https://files.pythonhosted.org/packages/0c/98/304898ac4e04e2d5e4e4c2eadc178b1f2a16d5f4bc2f91306c87d64680b9/grpcio-1.83.0.tar.gz
+            sha256: 7674587248fbbb2ac6e4eecf83a8a0f3d91a928f941de571acfd3a2f007fbc24
+          - package: grpcio
+            version: '1.72.2'
+            source: d6b42b2fd3e522a60318c7e2f2021219c6b5c470
+            url: https://files.pythonhosted.org/packages/f0/8d/e1ec7526a9b4a77dd9da80969c51fc4d49b32391e497a73fb05d2327b2f8/grpcio-1.72.2.tar.gz
+            sha256: ee5b77cfd1c098df244cc237f84bf8f9b32740e75a52d761860f19c14df22c1d
+          - package: grpcio-tools
+            version: '1.72.2'
+            source: d6b42b2fd3e522a60318c7e2f2021219c6b5c470
+            url: https://files.pythonhosted.org/packages/2e/ad/9cc1cf35a9aba9f98cebd73499b8b81ad22614d4d49bdb9aa44c6a55926b/grpcio_tools-1.72.2.tar.gz
+            sha256: 0168a6ea7565dd8319e0fb9691b9ccf5c24ea67f2cc7aaf138e9660c0358af2d
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: harness
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: grpc/grpc
+          ref: ${{ matrix.source }}
+          path: source
+          persist-credentials: false
+      - name: Isolated artifact and cache root
+        shell: pwsh
+        run: |
+          $stage = "$env:RUNNER_TEMP/evidence"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          "STAGE=$stage" >> $env:GITHUB_ENV
+          "PIP_CACHE_DIR=$env:RUNNER_TEMP/pip-cache" >> $env:GITHUB_ENV
+          "VIRTUALENV_OVERRIDE_APP_DATA=$env:RUNNER_TEMP/virtualenv" >> $env:GITHUB_ENV
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          architecture: arm64
+      - name: Check native interpreter
+        run: python -c "import sys,sysconfig; print(sys.version, sysconfig.get_platform()); assert sysconfig.get_platform() == 'win-arm64'; assert sys.version_info[:2] == (3,12)"
+      - name: Build hash-pinned release source
+        shell: pwsh
+        env:
+          PACKAGE: ${{ matrix.package }}
+          VERSION: ${{ matrix.version }}
+          SDIST_URL: ${{ matrix.url }}
+          SDIST_SHA256: ${{ matrix.sha256 }}
+          SOURCE_SHA: ${{ matrix.source }}
+        run: |
+          python -m pip install pip==25.2
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python harness/native-ci/build_grpc_release.py $env:PACKAGE $env:VERSION $env:SDIST_URL $env:SDIST_SHA256 $env:SOURCE_SHA
+          exit $LASTEXITCODE
+      - name: Audit wheel native PE and RECORD
+        run: python harness/native-ci/wheel_audit.py "$env:STAGE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.package }}-${{ matrix.version }}-cp312-win-arm64
+          path: ${{ env.STAGE }}
+          if-no-files-found: error
+  test:
+    needs: build
+    runs-on: windows-11-arm
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.72.2', '1.83.0']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: harness
+          persist-credentials: false
+      - name: Isolated artifact and cache root
+        shell: pwsh
+        run: |
+          $stage = "$env:RUNNER_TEMP/evidence"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          "STAGE=$stage" >> $env:GITHUB_ENV
+          "PIP_CACHE_DIR=$env:RUNNER_TEMP/pip-cache" >> $env:GITHUB_ENV
+          "VIRTUALENV_OVERRIDE_APP_DATA=$env:RUNNER_TEMP/virtualenv" >> $env:GITHUB_ENV
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          architecture: arm64
+      - name: Check native interpreter
+        run: python -c "import sys,sysconfig; print(sys.version, sysconfig.get_platform()); assert sysconfig.get_platform() == 'win-arm64'; assert sys.version_info[:2] == (3,12)"
+      - uses: actions/download-artifact@v4
+        with:
+          name: grpcio-${{ matrix.version }}-cp312-win-arm64
+          path: wheels/runtime
+      - uses: actions/download-artifact@v4
+        with:
+          name: grpcio-tools-1.72.2-cp312-win-arm64
+          path: wheels/tools
+      - name: Native generated-stub and loopback RPC tests
+        shell: pwsh
+        run: |
+          $wheels = (Get-ChildItem wheels -Recurse -Filter '*.whl').FullName
+          python -m pip install $wheels protobuf==6.33.5 setuptools==80.9.0 pytest==8.4.2
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip check
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -m pip freeze > "$env:STAGE/installed.txt"
+          python -m pytest harness/native-ci/test_grpc_native.py -v --junitxml="$env:STAGE/native.xml"
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: functional-grpcio-${{ matrix.version }}
+          path: ${{ env.STAGE }}
+          if-no-files-found: error
