@@ -28,4 +28,5 @@ if __name__ == '__main__':
     import sys
     enable(int(os.environ.get('GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS', '4')))
     sys.argv = ['setup.py', *sys.argv[1:]]
+    sys.path.insert(0, os.getcwd())  # Match direct setup.py sibling imports.
     runpy.run_path('setup.py', run_name='__main__')

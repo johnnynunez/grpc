@@ -13,10 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - version: '1.83.0'
-            source: c876f4da50f7da2f331888b88b2a7243514139fe
-            url: https://files.pythonhosted.org/packages/0c/98/304898ac4e04e2d5e4e4c2eadc178b1f2a16d5f4bc2f91306c87d64680b9/grpcio-1.83.0.tar.gz
-            sha256: 7674587248fbbb2ac6e4eecf83a8a0f3d91a928f941de571acfd3a2f007fbc24
           - version: '1.72.2'
             source: d6b42b2fd3e522a60318c7e2f2021219c6b5c470
             url: https://files.pythonhosted.org/packages/f0/8d/e1ec7526a9b4a77dd9da80969c51fc4d49b32391e497a73fb05d2327b2f8/grpcio-1.72.2.tar.gz
