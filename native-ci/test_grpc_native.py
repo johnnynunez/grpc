@@ -9,9 +9,20 @@ import tempfile
 import unittest
 
 import grpc
+import importlib.metadata
+import os
 
 
 class NativeGrpc(unittest.TestCase):
+    def test_versions_and_installed_extensions(self):
+        from grpc._cython import cygrpc
+        from grpc_tools import _protoc_compiler
+        self.assertEqual(grpc.__version__, os.environ['EXPECTED_GRPC_VERSION'])
+        self.assertEqual(importlib.metadata.version('grpcio-tools'), '1.72.2')
+        for module in (cygrpc, _protoc_compiler):
+            self.assertTrue(pathlib.Path(module.__file__).is_relative_to(sys.prefix), module.__file__)
+        print('runtime', grpc.__version__, 'tools', importlib.metadata.version('grpcio-tools'), 'python', sys.executable)
+
     def test_interpreter(self):
         self.assertEqual(sysconfig.get_platform(), 'win-arm64')
         self.assertEqual(sys.version_info[:2], (3, 12))
