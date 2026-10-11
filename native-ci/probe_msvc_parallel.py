@@ -7,7 +7,8 @@ import tempfile
 import threading
 import time
 
-from setuptools._distutils.compilers.C.msvc import Compiler as MSVCCompiler
+import setuptools
+from distutils.ccompiler import new_compiler
 
 if '--patched' in sys.argv:
     from msvc_parallel import enable
@@ -20,7 +21,7 @@ with tempfile.TemporaryDirectory() as tmp:
         p = root / f'unit{n}.c'
         p.write_text(f'int unit{n}(void) {{ return {n}; }}\n')
         files.append(str(p))
-    compiler = MSVCCompiler()
+    compiler = new_compiler(compiler='msvc')
     native = '--native' in sys.argv
     if native:
         compiler.initialize()

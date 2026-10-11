@@ -3,7 +3,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 def enable(jobs=4):
-    from setuptools._distutils.compilers.C.msvc import Compiler
+    import setuptools  # Install the distutils alias used by build_ext.
+    from distutils.compilers.C.msvc import Compiler
     original = Compiler.compile
 
     def compile_parallel(self, sources, output_dir=None, macros=None, include_dirs=None,
